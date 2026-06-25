@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="蝦皮分潤">
+<meta name="theme-color" content="#EE4D2D">
+<title>蝦皮分潤工具</title>
+<style>
+  :root {
+    --orange: #EE4D2D;
+    --orange-light: #FFF0ED;
+    --orange-mid: #FFDDD6;
+    --bg: #F7F7F7;
+    --card: #FFFFFF;
+    --text: #1A1A1A;
+    --text-sec: #666666;
+    --text-ter: #999999;
+    --border: rgba(0,0,0,0.10);
+    --border-med: rgba(0,0,0,0.18);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --success: #2E7D32;
+    --success-bg: #E8F5E9;
+    --warn: #E65100;
+    --warn-bg: #FFF3E0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111111;
+      --card: #1E1E1E;
+      --text: #F0F0F0;
+      --text-sec: #AAAAAA;
+      --text-ter: #666666;
+      --border: rgba(255,255,255,0.10);
+      --border-med: rgba(255,255,255,0.18);
+      --orange-light: #2A1510;
+      --orange-mid: #3D1A10;
+      --success-bg: #1B2E1C;
+      --warn-bg: #2A1A08;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Header */
+  .header {
+    background: var(--orange);
+    padding: 14px 16px calc(14px + env(safe-area-inset-top));
+    padding-top: calc(14px + env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-icon { font-size: 24px; }
+  .header h1 { font-size: 18px; font-weight: 700; color: #fff; }
+  .header p { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 1px; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--card);
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 8px;
+    gap: 3px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    color: var(--text-ter);
+    font-size: 11px;
+    transition: color 0.15s;
+  }
+  .nav-item.active { color: var(--orange); }
+  .nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Content area */
+  .content {
+    padding: 16px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    border: 0.5px solid var(--border);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-sec);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+
+  /* Category grid */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .cat-btn {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .cat-btn:active { transform: scale(0.97); }
+  .cat-btn.selected {
+    border-color: var(--orange);
+    background: var(--orange-light);
+  }
+  .cat-emoji { font-size: 22px; margin-bottom: 4px; }
+  .cat-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .cat-sub { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-top: 5px;
+  }
+  .badge-high { background: var(--success-bg); color: var(--success); }
+  .badge-mid { background: var(--warn-bg); color: var(--warn); }
+
+  /* Suggestion box */
+  .suggestion {
+    background: var(--orange-light);
+    border: 1px solid var(--orange-mid);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 12px;
+    display: none;
+  }
+  .suggestion.show { display: block; }
+  .suggestion h3 { font-size: 13px; font-weight: 700; color: var(--orange); margin-bottom: 8px; }
+  .kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .kw-tag {
+    background: var(--card);
+    border: 1px solid var(--orange-mid);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .kw-tag:active { background: var(--orange-mid); }
+  .kw-tag.copied { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .strategy {
+    font-size: 12px;
+    color: var(--text-sec);
+    line-height: 1.6;
+    border-top: 1px solid var(--orange-mid);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .strategy strong { color: var(--orange); }
+
+  /* CTA Button */
+  .cta-btn {
+    width: 100%;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    display: none;
+  }
+  .cta-btn:active { opacity: 0.85; }
+  .cta-btn.show { display: block; }
+
+  /* Copy panel */
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus { border-color: var(--orange); }
+  textarea { resize: vertical; min-height: 72px; }
+
+  .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .style-btn {
+    background: var(--bg);
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    padding: 9px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sec);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .style-btn:active { transform: scale(0.97); }
+  .style-btn.active {
+    border-color: var(--orange);
+    background: var(--orange-light);
+    color: var(--orange);
+    font-weight: 700;
+  }
+
+  .gen-btn {
+    width: 100%;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .gen-btn:active { opacity: 0.85; }
+  .gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Loader */
+  .loader {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+    font-size: 14px;
+    color: var(--text-sec);
+  }
+  .loader.show { display: flex; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid var(--border-med);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result cards */
+  .result-card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    display: none;
+  }
+  .result-card.show { display: block; }
+  .result-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-ter);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .copy-btn {
+    background: var(--bg);
+    border: 1px solid var(--border-med);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-sec);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .copy-btn.copied { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+  .result-text { font-size: 15px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+
+  .regen-btn {
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid var(--border-med);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-sec);
+    cursor: pointer;
+    font-family: inherit;
+    margin-bottom: 10px;
+    display: none;
+  }
+  .regen-btn:active { background: var(--bg); }
+  .regen-btn.show { display: block; }
+
+  .warn-note {
+    background: var(--warn-bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--warn);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-sec);
+    margin-bottom: 6px;
+    margin-top: 12px;
+    display: block;
+  }
+  .field-label:first-child { margin-top: 0; }
+
+  /* About panel */
+  .about-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .about-row:last-child { border-bottom: none; }
+  .about-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .about-row h3 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .about-row p { font-size: 13px; color: var(--text-sec); line-height: 1.55; }
+  .step-badge {
+    background: var(--orange);
+    color: #fff;
+    border-radius: 999px;
+    width: 22px; height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🦐</div>
+  <div>
+    <h1>蝦皮分潤工具</h1>
+    <p>選品 + 文案一條龍</p>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- 選品 Panel -->
+  <div class="panel active" id="panel-pick">
+    <div class="card">
+      <div class="card-title">選一個品類方向</div>
+      <div class="cat-grid" id="catGrid">
+        <button class="cat-btn" data-cat="美妝保養" onclick="selectCat(this)">
+          <div class="cat-emoji">💄</div>
+          <div class="cat-name">美妝保養</div>
+          <div class="cat-sub">回購率高、客單高</div>
+          <span class="badge badge-high">佣金高</span>
+        </button>
+        <button class="cat-btn" data-cat="服飾配件" onclick="selectCat(this)">
+          <div class="cat-emoji">👗</div>
+          <div class="cat-name">服飾配件</div>
+          <div class="cat-sub">話題性強好寫</div>
+          <span class="badge badge-high">佣金高</span>
+        </button>
+        <button class="cat-btn" data-cat="健康食品" onclick="selectCat(this)">
+          <div class="cat-emoji">🌿</div>
+          <div class="cat-name">健康食品</div>
+          <div class="cat-sub">常態需求穩定</div>
+          <span class="badge badge-high">佣金高</span>
+        </button>
+        <button class="cat-btn" data-cat="3C配件" onclick="selectCat(this)">
+          <div class="cat-emoji">📱</div>
+          <div class="cat-name">3C 配件</div>
+          <div class="cat-sub">充電線/手機殼</div>
+          <span class="badge badge-mid">佣金中</span>
+        </button>
+        <button class="cat-btn" data-cat="生活居家" onclick="selectCat(this)">
+          <div class="cat-emoji">🏠</div>
+          <div class="cat-name">生活居家</div>
+          <div class="cat-sub">日用品、收納</div>
+          <span class="badge badge-mid">佣金中</span>
+        </button>
+        <button class="cat-btn" data-cat="零食美食" onclick="selectCat(this)">
+          <div class="cat-emoji">🍿</div>
+          <div class="cat-name">零食美食</div>
+          <div class="cat-sub">話題爆款好傳播</div>
+          <span class="badge badge-mid">佣金中</span>
+        </button>
+        <button class="cat-btn" data-cat="寵物用品" onclick="selectCat(this)">
+          <div class="cat-emoji">🐾</div>
+          <div class="cat-name">寵物用品</div>
+          <div class="cat-sub">毛孩族群黏著高</div>
+          <span class="badge badge-mid">佣金中</span>
+        </button>
+        <button class="cat-btn" data-cat="運動健身" onclick="selectCat(this)">
+          <div class="cat-emoji">💪</div>
+          <div class="cat-name">運動健身</div>
+          <div class="cat-sub">話題好衝流量</div>
+          <span class="badge badge-mid">佣金中</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="suggestion" id="suggBox">
+      <h3 id="suggTitle">搜尋關鍵字</h3>
+      <div class="kw-wrap" id="kwWrap"></div>
+      <div class="strategy" id="strategy"></div>
+    </div>
+
+    <button class="cta-btn" id="goBtn" onclick="switchTab('copy')">選好了，去生成文案 →</button>
+  </div>
+
+  <!-- 文案 Panel -->
+  <div class="panel" id="panel-copy">
+    <div class="card">
+      <span class="field-label">蝦皮商品連結</span>
+      <input type="url" id="shopeeUrl" placeholder="https://shopee.tw/..." autocomplete="off">
+
+      <span class="field-label">備註（選填）</span>
+      <textarea id="userNote" placeholder="例如：限時特價、評價超好、我自己在用..."></textarea>
+
+      <span class="field-label">文案風格</span>
+      <div class="style-grid" id="styleGrid">
+        <button class="style-btn active" data-style="輕鬆有梗" onclick="pickStyle(this)">輕鬆有梗 😄</button>
+        <button class="style-btn" data-style="閨蜜推薦" onclick="pickStyle(this)">閨蜜推薦 💕</button>
+        <button class="style-btn" data-style="開箱驚喜" onclick="pickStyle(this)">開箱驚喜 📦</button>
+        <button class="style-btn" data-style="問句勾人" onclick="pickStyle(this)">問句勾人 🤔</button>
+      </div>
+
+      <button class="gen-btn" id="genBtn" onclick="generate()">生成文案 🚀</button>
+    </div>
+
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <span>AI 正在幫你寫文案...</span>
+    </div>
+
+    <button class="regen-btn" id="regenBtn" onclick="generate()">換一批文案 🔄</button>
+
+    <div id="results"></div>
+
+    <div class="warn-note">⚠️ 記得把連結換成你的蝦皮分潤專屬連結，再貼到脆發文</div>
+  </div>
+
+  <!-- 說明 Panel -->
+  <div class="panel" id="panel-about">
+    <div class="card">
+      <div class="card-title">使用流程</div>
+      <div class="about-row">
+        <div class="step-badge">1</div>
+        <div>
+          <h3>選品方向</h3>
+          <p>從 8 個品類選一個，複製推薦關鍵字去蝦皮搜尋，找評價 4.8+、銷量千件以上的商品</p>
+        </div>
+      </div>
+      <div class="about-row">
+        <div class="step-badge">2</div>
+        <div>
+          <h3>取得分潤連結</h3>
+          <p>蝦皮 APP → 我的 → 蝦皮分潤計畫 → 自定義推廣，貼入商品連結取得你的專屬短連結</p>
+        </div>
+      </div>
+      <div class="about-row">
+        <div class="step-badge">3</div>
+        <div>
+          <h3>生成文案</h3>
+          <p>貼入商品連結（蝦皮原本連結），選風格，AI 一次生成 3 則脆文案供你選用</p>
+        </div>
+      </div>
+      <div class="about-row">
+        <div class="step-badge">4</div>
+        <div>
+          <h3>發文到脆</h3>
+          <p>複製文案，把「連結在這👇」後面換成你的分潤連結，貼到 Threads 發文</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">分潤小知識</div>
+      <div class="about-row">
+        <div class="about-icon">💰</div>
+        <div>
+          <h3>佣金比例</h3>
+          <p>基本 1%，社群超過 1 萬粉且訂單達標可升至 5%。賣家邀請合作最高可達 10%+</p>
+        </div>
+      </div>
+      <div class="about-row">
+        <div class="about-icon">⏱️</div>
+        <div>
+          <h3>7 天追蹤期</h3>
+          <p>點擊你的連結後 7 天內下的第一筆訂單都算你的，買的不是你推的商品也計入</p>
+        </div>
+      </div>
+      <div class="about-row">
+        <div class="about-icon">💳</div>
+        <div>
+          <h3>領錢方式</h3>
+          <p>累積滿 500 元即可提領，每月 1 號出帳，次月 25 號自動入帳</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-pick" onclick="switchTab('pick')">
+    <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
+    選品
+  </button>
+  <button class="nav-item" id="nav-copy" onclick="switchTab('copy')">
+    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    文案
+  </button>
+  <button class="nav-item" id="nav-about" onclick="switchTab('about')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    說明
+  </button>
+</nav>
+
+<script>
+const catData = {
+  '美妝保養': {
+    kws:['精華液 推薦','防曬乳 高CP值','面膜 台灣品牌','卸妝水 溫和','保濕乳液 平價','美白精華 評價'],
+    hint:'找台灣小品牌或日韓熱門品，評價 4.8+、銷量千件以上的商品轉單率最高'
+  },
+  '服飾配件': {
+    kws:['涼感衣 夏天','寬褲 顯瘦','Y2K 風格','包包 平價','帆布袋 印花','帽子 遮陽'],
+    hint:'抓當季流行（涼感、防曬系列）或話題穿搭，圖好看比什麼都重要'
+  },
+  '健康食品': {
+    kws:['膠原蛋白 推薦','益生菌 台灣','維他命C 高劑量','蛋白粉 無糖','燕麥 即食','低卡零食 減脂'],
+    hint:'主打「懶人健康」概念，效果感強、有故事好說的商品最容易衝動購買'
+  },
+  '3C配件': {
+    kws:['磁吸充電線','手機殼 iPhone 16','行動電源 輕薄','AirPods 保護殼','藍芽耳機 平價','Switch 配件'],
+    hint:'跟著新機型走，iPhone/Android 新品上市時是最好的推廣時機'
+  },
+  '生活居家': {
+    kws:['收納盒 透明','掃地機器人 CP值','香氛蠟燭 台灣','空氣清淨機','廚房小物 實用','浴室防滑墊'],
+    hint:'「讓生活變好一點」的角度出發，日常場景感強的商品在脆上最有共鳴'
+  },
+  '零食美食': {
+    kws:['台灣零食 推薦','蝦皮美食 爆款','韓國零食 團購','氣泡水 口味','肉乾 伴手禮','餅乾 高CP'],
+    hint:'視覺吸引力強的包裝 + 話題感，一篇「試吃心得」文容易被轉發分享'
+  },
+  '寵物用品': {
+    kws:['貓糧 無穀','狗零食 台灣製','貓砂 除臭','寵物衣服 可愛','貓爬架 穩固','寵物玩具 互動'],
+    hint:'毛孩照片 + 商品是脆上最容易爆的組合，粉絲黏著度也特別高'
+  },
+  '運動健身': {
+    kws:['瑜珈墊 防滑','健身手套','彈力帶 組合','運動水壺 保溫','跳繩 計數','居家健身 器材'],
+    hint:'「在家也能動」話題在脆上持續有流量，加個小挑戰梗文案最容易被互動'
+  }
+};
+
+let selectedCat = '';
+let selectedStyle = '輕鬆有梗';
+
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+}
+
+function selectCat(el) {
+  document.querySelectorAll('.cat-btn').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCat = el.dataset.cat;
+
+  const d = catData[selectedCat];
+  document.getElementById('suggTitle').textContent = `「${selectedCat}」推薦搜尋關鍵字`;
+  document.getElementById('kwWrap').innerHTML = d.kws.map(kw =>
+    `<button class="kw-tag" onclick="copyKw(this,'${kw}')">${kw}</button>`
+  ).join('');
+  document.getElementById('strategy').innerHTML = `<strong>選品策略：</strong>${d.hint}`;
+  document.getElementById('suggBox').classList.add('show');
+  document.getElementById('goBtn').classList.add('show');
+}
+
+function copyKw(el, kw) {
+  navigator.clipboard.writeText(kw).then(() => {
+    el.classList.add('copied');
+    el.textContent = '已複製！';
+    setTimeout(() => {
+      el.classList.remove('copied');
+      el.textContent = kw;
+    }, 1500);
+  });
+}
+
+function pickStyle(el) {
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedStyle = el.dataset.style;
+}
+
+async function generate() {
+  const url = document.getElementById('shopeeUrl').value.trim();
+  const note = document.getElementById('userNote').value.trim();
+  if (!url) { document.getElementById('shopeeUrl').focus(); return; }
+
+  document.getElementById('loader').classList.add('show');
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('regenBtn').classList.remove('show');
+
+  const catCtx = selectedCat ? `商品品類：${selectedCat}。選品策略：${catData[selectedCat]?.hint || ''}` : '';
+  const noteCtx = note ? `使用者補充：${note}` : '';
+
+  const prompt = `你是台灣 Threads（脆）的文案達人，寫輕鬆口語、有點梗、讓陌生人也想點連結的推廣貼文。
+
+蝦皮商品連結：${url}
+${catCtx}
+${noteCtx}
+
+請從連結網址猜測商品類型，寫出 3 則完全不同的脆推廣文案。
+風格：${selectedStyle}
+
+規則：
+- 每則 80-150 字
+- 口語自然，像真人分享不像廣告
+- 短句多、有留白感，適合脆的版面
+- 結尾固定用「連結在這👇」，不自己加連結
+- 每則用 2-4 個台灣人常用 hashtag
+- 三則之間用「---」分隔
+- 直接給文案，不要加任何說明或標題`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{role:'user', content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const copies = text.split('---').map(s => s.trim()).filter(Boolean);
+
+    const results = document.getElementById('results');
+    copies.forEach((copy, i) => {
+      const card = document.createElement('div');
+      card.className = 'result-card show';
+      card.innerHTML = `
+        <div class="result-num">
+          文案 ${i + 1}
+          <button class="copy-btn" onclick="copyResult(this, ${i})">複製</button>
+        </div>
+        <div class="result-text" id="rt-${i}">${copy}</div>`;
+      results.appendChild(card);
+    });
+    document.getElementById('regenBtn').classList.add('show');
+  } catch(e) {
+    document.getElementById('results').innerHTML = '<p style="color:#c0392b;padding:10px;font-size:14px;">發生錯誤，請稍後再試</p>';
+  }
+
+  document.getElementById('loader').classList.remove('show');
+  document.getElementById('genBtn').disabled = false;
+}
+
+function copyResult(btn, i) {
+  const text = document.getElementById('rt-' + i).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '已複製 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '複製';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
