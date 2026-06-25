@@ -692,8 +692,15 @@ ${noteCtx}
       })
     });
     const data = await res.json();
+    console.log('Gemini raw:', JSON.stringify(data));
+    if (data.error) throw new Error('API錯誤：' + data.error.message + ' | status: ' + data.error.code);
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const copies = text.split('---').map(s => s.trim()).filter(Boolean);
+    console.log('text:', text);
+    let copies = text.split(/---+/).map(s => s.trim()).filter(s => s.length > 20);
+    if (copies.length < 2) {
+      copies = text.split(/\n\n+/).filter(s => s.trim().length > 30);
+    }
+    if (copies.length === 0) copies = [text.trim()];
 
     const results = document.getElementById('results');
     copies.forEach((copy, i) => {
