@@ -682,17 +682,17 @@ ${noteCtx}
 - 直接給文案，不要加任何說明或標題`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const GEMINI_KEY = 'AIzaSyBqI6t-eZH5yew24ly0l9W0jvF95bPoa_s';
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{role:'user', content:prompt}]
+        contents: [{parts: [{text: prompt}]}],
+        generationConfig: {maxOutputTokens: 1000}
       })
     });
     const data = await res.json();
-    const text = data.content.map(i => i.text || '').join('');
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const copies = text.split('---').map(s => s.trim()).filter(Boolean);
 
     const results = document.getElementById('results');
