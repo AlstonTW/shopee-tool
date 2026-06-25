@@ -709,7 +709,7 @@ ${noteCtx}
     });
     document.getElementById('regenBtn').classList.add('show');
   } catch(e) {
-    document.getElementById('results').innerHTML = '<p style="color:#c0392b;padding:10px;font-size:14px;">發生錯誤，請稍後再試</p>';
+    document.getElementById('results').innerHTML = '<p style="color:#c0392b;padding:10px;font-size:13px;">錯誤：' + e.message + '</p>';
   }
 
   document.getElementById('loader').classList.remove('show');
