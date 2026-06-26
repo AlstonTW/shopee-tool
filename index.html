@@ -705,14 +705,10 @@ ${noteCtx}
 - 直接給文案內容，不要加標題或任何說明`;
 
   try {
-    const GEMINI_KEY = 'AIzaSyBqI6t-eZH5yew24ly0l9W0jvF95bPoa_s';
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+    const res = await fetch('https://shopee-api.onrender.com/generate', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents: [{parts: [{text: prompt}]}],
-        generationConfig: {maxOutputTokens: 3000}
-      })
+      body: JSON.stringify({ prompt: prompt })
     });
     const data = await res.json();
     console.log('Gemini raw:', JSON.stringify(data));
